@@ -10,6 +10,7 @@
 import 'whatwg-fetch';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import Relay from 'react-relay/classic';
 import deepForceUpdate from 'react-deep-force-update';
 import queryString from 'query-string';
 import { createPath } from 'history/PathUtils';
@@ -18,6 +19,8 @@ import createFetch from './createFetch';
 import history from './history';
 import { updateMeta } from './DOMUtils';
 import router from './router';
+
+import HomeQuery from './root-queries/HomeQuery';
 
 // Global (context) variables that can be easily accessed from any React component
 // https://facebook.github.io/react/docs/context.html
@@ -78,7 +81,24 @@ async function onLocationChange(location, action) {
 
     const renderReactApp = isInitialRender ? ReactDOM.hydrate : ReactDOM.render;
     appInstance = renderReactApp(
-      <App context={context}>{route.component}</App>,
+      <Relay.Renderer
+        environment={Relay.Store}
+        Container={route.component}
+        queryConfig={new HomeQuery({ name: "Anonymous" })}
+        render={({ props, done, error, retry, stale }) => {
+          if (error) {
+            return <div> ERROR  </div>;
+          } else if (props) {
+            return (
+              <App context={context}>
+                <route.component {...route.component.props} {...props}/>
+              </App>
+            )
+          } else {
+            return <div> LOADING </div>;
+          }
+        }}
+      />,
       container,
       () => {
         if (isInitialRender) {

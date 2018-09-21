@@ -18,6 +18,7 @@ import jwt from 'jsonwebtoken';
 import nodeFetch from 'node-fetch';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
+import Relay from 'react-relay/classic';
 import PrettyError from 'pretty-error';
 import App from './components/App';
 import Html from './components/Html';
@@ -31,6 +32,8 @@ import schema from './data/schema';
 // import assets from './asset-manifest.json'; // eslint-disable-line import/no-unresolved
 import chunks from './chunk-manifest.json'; // eslint-disable-line import/no-unresolved
 import config from './config';
+
+import HomeQuery from './root-queries/HomeQuery';
 
 process.on('unhandledRejection', (reason, p) => {
   console.error('Unhandled Rejection at:', p, 'reason:', reason);
@@ -159,7 +162,24 @@ app.get('*', async (req, res, next) => {
 
     const data = { ...route };
     data.children = ReactDOM.renderToString(
-      <App context={context}>{route.component}</App>,
+      <Relay.Renderer
+        environment={Relay.Store}
+        Container={route.component}
+        queryConfig={new HomeQuery({ name: "Anonymous" })}
+        render={({ props, done, error, retry, stale }) => {
+          if (error) {
+            return <div> ERROR  </div>;
+          } else if (props) {
+            return (
+              <App context={context}>
+                <route.component {...route.component.props} {...props} />
+              </App>
+            )
+          } else {
+            return <div> LOADING </div>;
+          }
+        }}
+      />
     );
     data.styles = [{ id: 'css', cssText: [...css].join('') }];
 
