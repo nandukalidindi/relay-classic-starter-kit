@@ -7,19 +7,26 @@
  * LICENSE.txt file in the root directory of this source tree.
  */
 
-import {
-  GraphQLObjectType as ObjectType,
-  GraphQLID as ID,
-  GraphQLString as StringType,
-  GraphQLNonNull as NonNull,
-} from 'graphql';
+import { GraphQLObjectType, GraphQLString } from 'graphql';
 
-const UserType = new ObjectType({
+import { globalIdField } from 'graphql-relay';
+
+const UserType = new GraphQLObjectType({
   name: 'User',
-  fields: {
-    id: { type: new NonNull(ID) },
-    email: { type: StringType },
-  },
+  description: 'Generic User',
+  fields: () => ({
+    id: globalIdField('User', user => user.id),
+    name: {
+      type: GraphQLString,
+    },
+    email: {
+      type: GraphQLString,
+    },
+    password: {
+      type: GraphQLString,
+    },
+  }),
+  interfaces: [],
 });
 
 export default UserType;

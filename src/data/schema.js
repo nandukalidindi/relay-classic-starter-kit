@@ -7,22 +7,56 @@
  * LICENSE.txt file in the root directory of this source tree.
  */
 
-import {
-  GraphQLSchema as Schema,
-  GraphQLObjectType as ObjectType,
-} from 'graphql';
+import { GraphQLSchema, GraphQLObjectType, GraphQLString } from 'graphql';
 
-import me from './queries/me';
-import news from './queries/news';
+import { nodeDefinitions, fromGlobalId } from 'graphql-relay';
 
-const schema = new Schema({
-  query: new ObjectType({
-    name: 'Query',
-    fields: {
-      me,
-      news,
+import UserType from './types/UserType';
+
+const GENERIC_USER = {
+  id: 'random_id',
+  name: 'Anonymous',
+  email: 'anonymous@generic.com',
+  password: 'genericistaan',
+};
+
+async function globalIdConverter(globalId) {
+  const { type } = fromGlobalId(globalId);
+  if (type === 'User') {
+    return GENERIC_USER;
+  }
+  return null;
+}
+
+const { nodeInterface, nodeField } = nodeDefinitions(
+  globalIdConverter,
+  () => UserType,
+);
+
+// eslint-disable-next-line no-underscore-dangle
+UserType._typeConfig.interfaces = [nodeInterface];
+
+const queryType = new GraphQLObjectType({
+  name: 'Query',
+  fields: () => ({
+    node: nodeField,
+    viewer: {
+      type: UserType,
+      args: {
+        userId: {
+          type: GraphQLString,
+        },
+        name: {
+          type: GraphQLString,
+        },
+      },
+      resolve: () => GENERIC_USER,
     },
   }),
+});
+
+const schema = new GraphQLSchema({
+  query: queryType,
 });
 
 export default schema;
